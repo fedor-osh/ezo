@@ -1,0 +1,40 @@
+{
+  "name": "ezo",
+  "version": "0.1.0",
+  "description": "Ezo — a multiplayer Tbilisi courtyard portfolio. Three.js + Rapier + Nanostores + a tiny Node presence server.",
+  "scripts": {
+    "dev": "concurrently -k -n web,srv -c magenta,cyan \"vite\" \"tsx watch server/index.ts\"",
+    "dev:web": "vite",
+    "dev:server": "tsx watch server/index.ts",
+    "build": "tsc --noEmit && vite build",
+    "start": "NODE_ENV=production tsx server/index.ts",
+    "preview": "npm run build && npm start",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "license": "MIT",
+  "type": "module",
+  "dependencies": {
+    "@dimforge/rapier3d-compat": "^0.21.0",
+    "nanostores": "^1.5.5",
+    "three": "^0.186.1",
+    "ws": "^8.22.0"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.5",
+    "@types/three": "^0.186.0",
+    "@types/ws": "^8.18.2",
+    "autoprefixer": "^10.6.1",
+    "concurrently": "^10.0.6",
+    "postcss": "^8.5.31",
+    "tsx": "^4.23.15",
+    "typescript": "^7.0.2",
+    "vite": "^8.3.5",
+    "vitest": "^5.0.5"
+  },
+  "private": true,
+  "browserslist": [
+    "defaults and supports webgl2",
+    "not dead"
+  ]
+}

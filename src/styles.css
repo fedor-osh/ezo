@@ -1,0 +1,4 @@
+/* Owned by the UI agent. */
+html, body { margin: 0; height: 100%; background: #f6e7c8; }
+#scene { position: fixed; inset: 0; width: 100%; height: 100%; display: block; }
+#scene[data-hover] { cursor: pointer; }
