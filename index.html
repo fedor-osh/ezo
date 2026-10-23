@@ -2,14 +2,58 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <title>Fedor Oshepkov — fullstack engineer</title>
     <meta name="description" content="Fedor Oshepkov, fullstack TypeScript engineer. A multiplayer Tbilisi courtyard portfolio." />
-    <meta name="theme-color" content="#f6e7c8" />
+    <meta name="color-scheme" content="light dark" />
+    <meta name="theme-color" content="#f6e7c8" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#2a2131" media="(prefers-color-scheme: dark)" />
   </head>
   <body>
-    <!-- Owned by the UI agent: skip link, header, nav, panels. -->
+    <a class="skip-link" href="#main" data-skip>Skip to content</a>
+
     <canvas id="scene" aria-hidden="true"></canvas>
+    <p class="loader" aria-hidden="true" data-loader><span class="loader__ember"></span>Warming up the tone…</p>
+
+    <div class="ui">
+      <header class="brand">
+        <p class="brand__name">Fedor Oshepkov</p>
+        <p class="brand__role">Fullstack engineer</p>
+      </header>
+
+      <nav class="sections" aria-label="Sections">
+        <ul class="sections__list" data-nav></ul>
+      </nav>
+
+      <main id="main" class="stage" tabindex="-1">
+        <p class="visually-hidden" data-scene-desc>
+          Behind this page is a 3D courtyard in old Tbilisi: laundry on the line, a clay bread oven, a feast under the
+          vines, cats among fallen leaves. Other visitors appear in it as butterflies and leaves.
+        </p>
+        <p class="note" role="note" data-fallback-note hidden></p>
+        <div class="panels" data-panels></div>
+      </main>
+
+      <footer class="dock">
+        <p class="presence" data-presence>Finding your wings…</p>
+        <div class="settings" role="group" aria-label="Display">
+          <button type="button" class="toggle" aria-pressed="false" data-toggle="motion">
+            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+              <path d="M3 12c2.5-4 5-4 7.5 0s5 4 7.5 0" /><path d="M20 6 4 18" />
+            </svg>
+            <span class="toggle__label">Reduce motion</span>
+          </button>
+          <button type="button" class="toggle" aria-pressed="false" data-toggle="flat">
+            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+              <path d="M6 3h9l3 3v15H6z" /><path d="M9 10h6M9 14h6M9 18h4" />
+            </svg>
+            <span class="toggle__label">Flat mode</span>
+          </button>
+        </div>
+        <p class="visually-hidden" role="status" data-announcer></p>
+      </footer>
+    </div>
+
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>

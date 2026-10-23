@@ -1,4 +1,922 @@
-/* Owned by the UI agent. */
-html, body { margin: 0; height: 100%; background: #f6e7c8; }
-#scene { position: fixed; inset: 0; width: 100%; height: 100%; display: block; }
-#scene[data-hover] { cursor: pointer; }
+/*
+ * Ezo UI. The 3D yard is the star: the DOM is a few small paper cards pinned over it.
+ * Layers: reset → tokens → base → layout → components → modes (flat, fallbacks) → a11y (forced colours, focus).
+ */
+@layer reset, tokens, base, layout, components, modes, a11y;
+
+/* ------------------------------------------------------------------------------------------------ */
+@layer reset {
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+  }
+
+  body,
+  h1,
+  h2,
+  h3,
+  p,
+  ul {
+    margin: 0;
+  }
+
+  ul {
+    padding: 0;
+    list-style: none;
+  }
+
+  button {
+    font: inherit;
+    color: inherit;
+  }
+
+  [hidden] {
+    display: none !important;
+  }
+}
+
+/* ------------------------------------------------------------------------------------------------ */
+@layer tokens {
+  :root {
+    color-scheme: light dark;
+
+    /* Paper and ink. Every text pair below is ≥ 4.5:1 (checked), most ≥ 7:1. */
+    --paper: #fff8ec;
+    --paper-2: #f5e6cc;
+    --ink: #2d221c;
+    --ink-soft: #5f4a3c;
+    --link: #0b6e6d;
+    --link-hover: #9b2348;
+    --glass: color-mix(in oklab, var(--paper) 90%, transparent);
+    --hairline: color-mix(in oklab, var(--ink) 14%, transparent);
+    --shadow-tint: #6b4320;
+
+    /* Cloth palette accents (match src/core/sections.ts). */
+    --saffron: #ffd23f;
+    --teal: #0e7c7b;
+    --wine: #9b2348;
+
+    --focus: #8a1c40;
+    --focus-halo: #fff8ec;
+
+    --font: ui-rounded, "SF Pro Rounded", "Nunito", system-ui, -apple-system, "Segoe UI", sans-serif;
+    --step--1: clamp(0.75rem, 0.72rem + 0.1vw, 0.8125rem);
+    --step-0: clamp(0.875rem, 0.84rem + 0.15vw, 0.9375rem);
+    --step-1: clamp(1.25rem, 1.15rem + 0.4vw, 1.5rem);
+
+    --gutter: clamp(0.75rem, 0.5rem + 1.2vw, 1.5rem);
+    --radius: 1.25rem;
+    --tap: 2.75rem; /* 44 px minimum hit target */
+
+    --shadow-card:
+      0 1px 0 color-mix(in oklab, var(--shadow-tint) 8%, transparent),
+      0 2px 6px -2px color-mix(in oklab, var(--shadow-tint) 22%, transparent),
+      0 18px 40px -18px color-mix(in oklab, var(--shadow-tint) 45%, transparent);
+    --shadow-chip: 0 1px 2px color-mix(in oklab, var(--shadow-tint) 18%, transparent),
+      0 6px 18px -8px color-mix(in oklab, var(--shadow-tint) 40%, transparent);
+
+    --ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+
+  /* Dusk: the cards turn plum, the 3D yard stays golden. */
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --paper: #2a2131;
+      --paper-2: #3a2e44;
+      --ink: #fbefdc;
+      --ink-soft: #d4c2ad;
+      --link: #6fe0cf;
+      --link-hover: #ff9db8;
+      --hairline: color-mix(in oklab, var(--ink) 16%, transparent);
+      --shadow-tint: #0d0812;
+      --focus: #ffd23f;
+      --focus-halo: #2a2131;
+    }
+  }
+
+  /* Cloth prints, shared by nav swatches and panel ribbons. */
+  [data-pattern] {
+    --print: var(--accent);
+  }
+  [data-pattern="stripes"] {
+    --print: repeating-linear-gradient(90deg, var(--accent) 0 0.3rem, var(--accent-2) 0.3rem 0.5rem);
+  }
+  [data-pattern="checks"] {
+    --print: repeating-conic-gradient(var(--accent) 0 25%, var(--accent-2) 0 50%) 0 0 / 0.5rem 0.5rem;
+  }
+  [data-pattern="dots"] {
+    --print: radial-gradient(circle, var(--accent-2) 0 28%, transparent 32%) 0 0 / 0.42rem 0.42rem, var(--accent);
+  }
+  [data-pattern="flowers"] {
+    --print: radial-gradient(circle, #fff 0 14%, var(--accent-2) 17% 34%, transparent 38%) 0 0 / 0.55rem 0.55rem,
+      var(--accent);
+  }
+  [data-pattern="plain"] {
+    --print: linear-gradient(var(--accent) 0 70%, var(--accent-2) 70%);
+  }
+}
+
+/* ------------------------------------------------------------------------------------------------ */
+@layer base {
+  html {
+    background: #f6e7c8;
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+  }
+
+  body {
+    min-block-size: 100dvh;
+    font-family: var(--font);
+    font-size: var(--step-0);
+    line-height: 1.5;
+    color: var(--ink);
+    background: #f6e7c8;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* 3D mode: the page is one screen, the yard behind it. */
+  :root:not([data-mode="flat"]) body {
+    overflow: hidden;
+  }
+
+  a {
+    color: var(--link);
+    text-decoration-thickness: 0.08em;
+    text-underline-offset: 0.2em;
+    text-decoration-color: color-mix(in oklab, currentColor 45%, transparent);
+  }
+
+  a:hover {
+    color: var(--link-hover);
+    text-decoration-color: currentColor;
+  }
+
+  h1,
+  h2,
+  h3 {
+    line-height: 1.15;
+    text-wrap: balance;
+  }
+
+  p {
+    text-wrap: pretty;
+  }
+
+  .icon {
+    inline-size: 1.25em;
+    block-size: 1.25em;
+    flex: none;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.8;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+
+  .visually-hidden {
+    position: absolute !important;
+    inline-size: 1px;
+    block-size: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+}
+
+/* ------------------------------------------------------------------------------------------------ */
+@layer layout {
+  #scene {
+    position: fixed;
+    inset: 0;
+    inline-size: 100%;
+    block-size: 100%;
+    display: block;
+    touch-action: none;
+  }
+
+  /* The butterfly is the cursor (toggled by src/life/creatures). Otherwise a hand over clickables. */
+  body.creature-cursor #scene {
+    cursor: none;
+  }
+  body:not(.creature-cursor) #scene[data-hover] {
+    cursor: pointer;
+  }
+
+  /* The UI layer lets pointer events fall through to the yard, except on the cards themselves. */
+  .ui {
+    position: relative;
+    z-index: 1;
+    block-size: 100dvh;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-rows: auto minmax(0, 1fr) auto;
+    grid-template-areas:
+      "brand nav"
+      ".     ."
+      "stage dock";
+    gap: var(--gutter);
+    padding: var(--gutter);
+    padding-inline: max(var(--gutter), env(safe-area-inset-left)) max(var(--gutter), env(safe-area-inset-right));
+    pointer-events: none;
+  }
+
+  .brand {
+    grid-area: brand;
+    align-self: start;
+  }
+  .sections {
+    grid-area: nav;
+    align-self: start;
+  }
+  .stage {
+    grid-area: stage;
+    align-self: end;
+    inline-size: min(100%, 25rem);
+    min-block-size: 0;
+    max-block-size: 100%;
+    display: grid;
+    gap: 0.5rem;
+    outline: none;
+  }
+  /* The work list wants a little more room. */
+  .stage:has(#work:not([hidden])) {
+    inline-size: min(100%, 29rem);
+  }
+  .dock {
+    grid-area: dock;
+    align-self: end;
+    justify-self: end;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 0.5rem;
+  }
+
+  .panels {
+    display: grid;
+    min-block-size: 0;
+  }
+  .panels > .panel {
+    grid-area: 1 / 1;
+    align-self: end;
+    max-block-size: min(36rem, calc(100dvh - 10.5rem));
+  }
+
+  .sections,
+  .panel,
+  .presence,
+  .settings,
+  .note,
+  .skip-link {
+    pointer-events: auto;
+  }
+
+  /* Phones: the nav becomes a bottom bar and the panel a sheet above it, leaving the yard visible on top. */
+  @media (max-width: 40rem) {
+    .ui {
+      grid-template-columns: minmax(0, 1fr) auto;
+      grid-template-rows: auto minmax(0, 1fr) auto auto;
+      grid-template-areas:
+        "brand dock"
+        ".     ."
+        "stage stage"
+        "nav   nav";
+      padding-block-end: 0;
+      row-gap: 0.5rem;
+    }
+    .dock {
+      align-self: start;
+      flex-direction: row-reverse;
+      align-items: center;
+      gap: 0.375rem;
+    }
+    .stage,
+    .stage:has(#work:not([hidden])) {
+      inline-size: 100%;
+    }
+    .panels > .panel {
+      max-block-size: min(42dvh, 22rem);
+    }
+    .sections {
+      margin-inline: calc(-1 * max(var(--gutter), env(safe-area-inset-left)))
+        calc(-1 * max(var(--gutter), env(safe-area-inset-right)));
+    }
+  }
+}
+
+/* ------------------------------------------------------------------------------------------------ */
+@layer components {
+  /* ---- Skip link ---- */
+  .skip-link {
+    position: fixed;
+    z-index: 10;
+    inset-block-start: var(--gutter);
+    inset-inline-start: var(--gutter);
+    display: inline-flex;
+    align-items: center;
+    min-block-size: var(--tap);
+    padding-inline: 1rem;
+    border-radius: 999px;
+    background: var(--paper);
+    color: var(--ink);
+    font-weight: 700;
+    box-shadow: var(--shadow-chip);
+    translate: 0 calc(-100% - 2 * var(--gutter));
+  }
+  .skip-link:focus {
+    translate: 0 0;
+  }
+
+  /* ---- Brand ---- */
+  .brand {
+    padding: 0.25rem 0.5rem;
+    color: #2d221c;
+    /* Sits straight on the warm sky: a soft cream glow keeps it readable over any part of the scene. */
+    text-shadow: 0 0 0.5rem #fff8ec, 0 0 0.15rem #fff8ec;
+  }
+  .brand__name {
+    font-weight: 800;
+    font-size: var(--step-0);
+    letter-spacing: -0.01em;
+  }
+  .brand__role {
+    font-size: var(--step--1);
+    color: #4a3a2f;
+  }
+
+  /* ---- Section nav ---- */
+  .sections__list {
+    display: flex;
+    gap: 0.25rem;
+    padding: 0.3rem;
+    border-radius: 999px;
+    background: var(--glass);
+    box-shadow: var(--shadow-chip);
+    backdrop-filter: blur(10px) saturate(1.2);
+  }
+
+  .sections__link {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    min-block-size: var(--tap);
+    padding-inline: 0.85rem 1rem;
+    border-radius: 999px;
+    color: var(--ink);
+    font-weight: 600;
+    text-decoration: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .sections__link:hover {
+    color: var(--ink);
+    background: color-mix(in oklab, var(--accent) 20%, transparent);
+  }
+  .sections__link[aria-current] {
+    font-weight: 800;
+    background: color-mix(in oklab, var(--accent) 34%, var(--paper));
+    box-shadow: inset 0 0 0 1.5px color-mix(in oklab, var(--accent-2) 70%, transparent);
+  }
+
+  .sections__swatch {
+    inline-size: 0.8rem;
+    block-size: 0.8rem;
+    border-radius: 0.25rem 0.25rem 0.4rem 0.4rem;
+    background: var(--print);
+    box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--ink) 15%, transparent);
+    rotate: -6deg;
+  }
+  .sections__link[aria-current] .sections__swatch {
+    rotate: 0deg;
+    scale: 1.15;
+  }
+
+  @media (max-width: 40rem) {
+    .sections__list {
+      border-radius: var(--radius) var(--radius) 0 0;
+      padding: 0.25rem 0.375rem max(0.375rem, env(safe-area-inset-bottom));
+      gap: 0.125rem;
+      background: var(--paper);
+      backdrop-filter: none;
+    }
+    .sections__list > li {
+      flex: 1 1 0;
+      min-inline-size: 0;
+    }
+    .sections__link {
+      flex-direction: column;
+      justify-content: center;
+      gap: 0.2rem;
+      min-block-size: 3.25rem;
+      padding: 0.25rem 0.125rem;
+      border-radius: 0.875rem;
+      font-size: var(--step--1);
+    }
+  }
+
+  /* ---- Panels: paper cards with a stitched hem ---- */
+  .panel {
+    container: panel / inline-size;
+    position: relative;
+    overflow: auto;
+    overscroll-behavior: contain;
+    scrollbar-width: thin;
+    padding: 1.1rem 1.35rem 1.25rem;
+    border-radius: var(--radius);
+    background: var(--paper);
+    color: var(--ink);
+    box-shadow: var(--shadow-card);
+    /* The stitched seam: a dashed outline drawn inside the edge, in the cloth's accent thread. */
+    outline: 1.5px dashed color-mix(in oklab, var(--accent-2) 55%, var(--paper));
+    outline-offset: -0.45rem;
+    scroll-margin-block: 5rem;
+  }
+
+  .panel__swatch {
+    inline-size: 2.75rem;
+    block-size: 0.5rem;
+    margin-block-end: 0.75rem;
+    border-radius: 999px;
+    background: var(--print);
+    box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--ink) 12%, transparent);
+  }
+
+  .panel__title {
+    font-size: var(--step-1);
+    font-weight: 800;
+    letter-spacing: -0.015em;
+    margin-block-end: 0.5rem;
+    border-radius: 0.375rem;
+  }
+
+  .panel > p + p {
+    margin-block-start: 0.6rem;
+  }
+
+  .kicker {
+    font-weight: 600;
+    color: var(--ink-soft);
+    margin-block: -0.25rem 0.6rem;
+  }
+  .lede {
+    font-size: calc(var(--step-0) * 1.05);
+  }
+  .meta {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    color: var(--ink-soft);
+    font-size: var(--step--1);
+  }
+  .hint {
+    margin-block-start: 0.85rem !important;
+    padding-block-start: 0.6rem;
+    border-block-start: 1.5px dashed var(--hairline);
+    color: var(--ink-soft);
+    font-size: var(--step--1);
+  }
+
+  .tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem;
+  }
+  .tags > li {
+    padding: 0.05rem 0.5rem;
+    border-radius: 999px;
+    background: var(--paper-2);
+    color: var(--ink-soft);
+    font-size: var(--step--1);
+    font-weight: 600;
+  }
+
+  /* Projects: the whole row is the link's hit area (stretched link), the name stays the accessible name. */
+  .projects {
+    display: grid;
+  }
+  .project {
+    position: relative;
+    display: grid;
+    gap: 0.2rem;
+    padding: 0.65rem 0.6rem;
+    margin-inline: -0.6rem;
+    border-radius: 0.875rem;
+  }
+  .project + .project {
+    border-block-start: 1.5px dashed var(--hairline);
+  }
+  .project:has(a:hover) {
+    background: color-mix(in oklab, var(--accent) 14%, transparent);
+  }
+  .project__name {
+    font-size: var(--step-0);
+    font-weight: 750;
+  }
+  .project__name a::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+  }
+  .project__what {
+    color: var(--ink-soft);
+    font-size: var(--step--1);
+  }
+  .project .tags {
+    margin-block-start: 0.25rem;
+  }
+
+  .stack {
+    display: grid;
+    gap: 0.9rem;
+  }
+  .stack__group h3 {
+    font-size: var(--step--1);
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--ink-soft);
+    margin-block-end: 0.35rem;
+  }
+
+  @container panel (min-width: 34rem) {
+    .stack {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+    .projects {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      column-gap: 1.5rem;
+    }
+    .project:nth-child(2) {
+      border-block-start: 0;
+    }
+  }
+
+  .contacts {
+    display: grid;
+    gap: 0.4rem;
+    margin-block-start: 0.85rem;
+  }
+  .contact {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    min-block-size: var(--tap);
+    padding-inline: 0.9rem;
+    border-radius: 0.875rem;
+    background: color-mix(in oklab, var(--accent) 16%, var(--paper));
+    color: var(--ink);
+    font-weight: 700;
+    text-decoration: none;
+    overflow-wrap: anywhere;
+  }
+  .contact:hover {
+    color: var(--ink);
+    background: color-mix(in oklab, var(--accent) 30%, var(--paper));
+  }
+  .contact__handle {
+    font-weight: 500;
+    color: var(--ink-soft);
+  }
+
+  .note {
+    padding: 0.75rem 1rem;
+    border-radius: 0.875rem;
+    background: var(--paper-2);
+    color: var(--ink);
+    font-size: var(--step--1);
+  }
+
+  /* ---- Presence chip + settings ---- */
+  .presence {
+    display: inline-block;
+    padding: 0.4rem 0.8rem;
+    border-radius: 999px;
+    background: var(--glass);
+    box-shadow: var(--shadow-chip);
+    backdrop-filter: blur(10px);
+    font-size: var(--step--1);
+    font-weight: 600;
+    white-space: nowrap;
+  }
+  .presence__dot {
+    display: inline-block;
+    vertical-align: -0.02em;
+    inline-size: 0.6rem;
+    block-size: 0.6rem;
+    margin-inline-end: 0.35rem;
+    border-radius: 50%;
+    background: var(--c);
+    box-shadow: 0 0 0 2px var(--paper), 0 0 0 3px color-mix(in oklab, var(--ink) 20%, transparent);
+  }
+
+  .settings {
+    display: flex;
+    gap: 0.375rem;
+  }
+  .toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    min-block-size: var(--tap);
+    min-inline-size: var(--tap);
+    padding-inline: 0.8rem;
+    border: 0;
+    border-radius: 999px;
+    background: var(--glass);
+    box-shadow: var(--shadow-chip);
+    backdrop-filter: blur(10px);
+    font-size: var(--step--1);
+    font-weight: 650;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .toggle:hover {
+    background: var(--paper);
+  }
+  /* A mini switch shows the state with shape, not only colour. */
+  .toggle::after {
+    content: "";
+    inline-size: 1.75rem;
+    block-size: 1rem;
+    border-radius: 999px;
+    background:
+      radial-gradient(circle at 0.5rem 50%, var(--paper) 0 0.3rem, transparent 0.32rem),
+      color-mix(in oklab, var(--ink) 30%, var(--paper));
+    flex: none;
+  }
+  .toggle[aria-pressed="true"]::after {
+    background:
+      radial-gradient(circle at calc(100% - 0.5rem) 50%, var(--paper) 0 0.3rem, transparent 0.32rem),
+      var(--teal);
+  }
+
+  @media (max-width: 40rem) {
+    .toggle {
+      padding-inline: 0;
+      justify-content: center;
+    }
+    .toggle__label,
+    .toggle::after,
+    .presence__you,
+    .presence__total {
+      /* Visually compact on phones; still read by screen readers. */
+      position: absolute;
+      inline-size: 1px;
+      block-size: 1px;
+      overflow: hidden;
+      clip-path: inset(50%);
+      white-space: nowrap;
+    }
+    .toggle[aria-pressed="true"] {
+      background: color-mix(in oklab, var(--teal) 22%, var(--paper));
+      box-shadow: inset 0 0 0 2px var(--teal), var(--shadow-chip);
+    }
+    .presence {
+      padding-block: 0.75rem;
+    }
+  }
+
+  /* ---- Loading ---- */
+  .loader {
+    position: fixed;
+    z-index: 2;
+    inset-block-start: 50%;
+    inset-inline-start: 50%;
+    translate: -50% -50%;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.55rem;
+    padding: 0.5rem 1rem;
+    border-radius: 999px;
+    background: var(--glass);
+    box-shadow: var(--shadow-chip);
+    font-size: var(--step--1);
+    font-weight: 650;
+    pointer-events: none;
+    transition: opacity 0.4s ease, visibility 0s linear 0.4s;
+  }
+  :root[data-ready] .loader {
+    opacity: 0;
+    visibility: hidden;
+  }
+  .loader__ember {
+    inline-size: 0.6rem;
+    block-size: 0.6rem;
+    border-radius: 50%;
+    background: radial-gradient(circle at 40% 40%, #ffd23f, #e85d2c);
+    box-shadow: 0 0 0.6rem #f08a3c;
+  }
+
+  /* ---- Motion, only when allowed ---- */
+  :root[data-motion="full"] .panel:not([hidden]) {
+    animation: panel-in 0.36s var(--ease-out) both;
+  }
+  :root[data-motion="full"] .panel[data-state="out"] {
+    animation: panel-out 0.18s ease-in both;
+  }
+  :root[data-motion="full"] :is(.sections__link, .contact, .toggle) {
+    transition: background-color 0.15s ease, box-shadow 0.15s ease;
+  }
+  :root[data-motion="full"] .sections__swatch {
+    transition: rotate 0.25s var(--ease-out), scale 0.25s var(--ease-out);
+  }
+  :root[data-motion="full"] .sections__link:hover .sections__swatch {
+    rotate: 8deg;
+  }
+  :root[data-motion="full"] .skip-link {
+    transition: translate 0.2s var(--ease-out);
+  }
+  :root[data-motion="full"] .loader__ember {
+    animation: ember 1.4s ease-in-out infinite alternate;
+  }
+
+  @keyframes panel-in {
+    from {
+      opacity: 0;
+      translate: 0 0.75rem;
+      scale: 0.985;
+    }
+  }
+  @keyframes panel-out {
+    to {
+      opacity: 0;
+      translate: 0 0.35rem;
+    }
+  }
+  @keyframes ember {
+    to {
+      scale: 0.7;
+      opacity: 0.6;
+    }
+  }
+}
+
+/* ------------------------------------------------------------------------------------------------ */
+@layer modes {
+  /* Flat mode (chosen, or no WebGL): no canvas, the cards become a calm, ordinary page. */
+  :is(:root[data-mode="flat"], :root[data-webgl]) :is(#scene, .loader, .hint) {
+    display: none;
+  }
+
+  :is(:root[data-mode="flat"], :root[data-webgl]) body {
+    background:
+      repeating-linear-gradient(90deg, color-mix(in oklab, #c9a66b 7%, transparent) 0 1px, transparent 1px 6px),
+      repeating-linear-gradient(0deg, color-mix(in oklab, #c9a66b 6%, transparent) 0 1px, transparent 1px 6px),
+      #f6e7c8;
+  }
+
+  :is(:root[data-mode="flat"], :root[data-webgl]) .ui {
+    block-size: auto;
+    min-block-size: 100dvh;
+    max-inline-size: 46rem;
+    margin-inline: auto;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: none;
+    grid-template-areas:
+      "brand"
+      "nav"
+      "stage"
+      "dock";
+    align-content: start;
+    pointer-events: auto;
+  }
+
+  :is(:root[data-mode="flat"], :root[data-webgl]) .brand {
+    text-shadow: none;
+  }
+
+  :is(:root[data-mode="flat"], :root[data-webgl]) .sections {
+    position: sticky;
+    inset-block-start: var(--gutter);
+    z-index: 3;
+    justify-self: start;
+  }
+
+  :is(:root[data-mode="flat"], :root[data-webgl]) :is(.stage, .stage:has(#work:not([hidden]))) {
+    inline-size: 100%;
+    max-block-size: none;
+  }
+
+  :is(:root[data-mode="flat"], :root[data-webgl]) .panels {
+    display: flex;
+    flex-direction: column;
+    gap: var(--gutter);
+  }
+  :is(:root[data-mode="flat"], :root[data-webgl]) .panels > .panel {
+    align-self: stretch;
+    max-block-size: none;
+    overflow: visible;
+  }
+
+  :is(:root[data-mode="flat"], :root[data-webgl]) .dock {
+    justify-self: start;
+    align-items: flex-start;
+    padding-block-end: var(--gutter);
+  }
+
+  @media (max-width: 40rem) {
+    :is(:root[data-mode="flat"], :root[data-webgl]) .ui {
+      grid-template-areas:
+        "brand"
+        "dock"
+        "stage"
+        "nav";
+    }
+    :is(:root[data-mode="flat"], :root[data-webgl]) .sections {
+      inset-block: auto 0;
+      justify-self: stretch;
+    }
+    :is(:root[data-mode="flat"], :root[data-webgl]) .dock {
+      flex-direction: row;
+      padding-block-end: 0;
+    }
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :is(:root[data-mode="flat"], :root[data-webgl]) body {
+      background:
+        repeating-linear-gradient(90deg, color-mix(in oklab, #fff 3%, transparent) 0 1px, transparent 1px 6px),
+        repeating-linear-gradient(0deg, color-mix(in oklab, #fff 3%, transparent) 0 1px, transparent 1px 6px),
+        #1d1722;
+    }
+    :is(:root[data-mode="flat"], :root[data-webgl]) .brand {
+      color: var(--ink);
+    }
+    :is(:root[data-mode="flat"], :root[data-webgl]) .brand__role {
+      color: var(--ink-soft);
+    }
+  }
+}
+
+/* ------------------------------------------------------------------------------------------------ */
+@layer a11y {
+  /* Thick, two-tone focus ring: dark ring with a light halo, visible over cream cards and the busy yard. */
+  :focus-visible {
+    outline: 3px solid var(--focus);
+    outline-offset: 3px;
+    box-shadow: 0 0 0 8.5px var(--focus-halo);
+  }
+  /* Headings receive focus from script so screen readers announce them; a lighter ring is enough. */
+  [tabindex="-1"]:focus {
+    outline: none;
+  }
+  [tabindex="-1"]:focus-visible {
+    outline: 2px dashed var(--focus);
+    outline-offset: 3px;
+    box-shadow: none;
+  }
+  .project__name a:focus-visible {
+    outline: none;
+    box-shadow: none;
+  }
+  .project__name a:focus-visible::after {
+    outline: 3px solid var(--focus);
+    outline-offset: -1px;
+  }
+
+  @media (forced-colors: active) {
+    .panel,
+    .sections__list,
+    .toggle,
+    .presence,
+    .loader,
+    .note,
+    .skip-link,
+    .contact {
+      border: 1px solid CanvasText;
+    }
+    .panel {
+      outline: 1px dashed CanvasText;
+    }
+    .sections__swatch,
+    .panel__swatch,
+    .presence__dot {
+      display: none;
+    }
+    .sections__link[aria-current] {
+      outline: 2px solid Highlight;
+      outline-offset: -2px;
+      text-decoration: underline;
+    }
+    .toggle::after {
+      forced-color-adjust: none;
+      background: Canvas;
+      border: 1px solid CanvasText;
+    }
+    .toggle[aria-pressed="true"]::after {
+      background: radial-gradient(circle at calc(100% - 0.5rem) 50%, Canvas 0 0.3rem, transparent 0.32rem), Highlight;
+    }
+    .toggle[aria-pressed="true"] {
+      outline: 2px solid Highlight;
+    }
+    :focus-visible,
+    [tabindex="-1"]:focus-visible {
+      outline: 3px solid Highlight;
+      box-shadow: none;
+    }
+    .brand {
+      text-shadow: none;
+    }
+  }
+}
