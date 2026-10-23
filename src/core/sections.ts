@@ -31,7 +31,7 @@ export const SECTIONS: Section[] = [
     label: "Hello",
     palette: ["#ffd23f", "#ee4266"],
     pattern: "stripes",
-    shot: { position: [-0.5, 5.6, 14.2], target: [-1.4, 2.3, -2], fov: 50, pointerDepth: 11 },
+    shot: { position: [-0.6, 5.0, 12.2], target: [-1.2, 2.7, -2], fov: 50, pointerDepth: 9.5 },
   },
   {
     id: "work",

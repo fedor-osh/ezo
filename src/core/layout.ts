@@ -59,7 +59,7 @@ export const SPOTS = {
  * Lines sag; `sag` is the drop at the middle in metres. The world provides poles/hooks at the endpoints.
  */
 export const CLOTHESLINES = {
-  main: { from: [-6.5, 3.8, -2.9] as V3, to: [6.5, 3.8, -1.6] as V3, sag: 0.35 },
+  main: { from: [-6.5, 4.3, -1.6] as V3, to: [6.5, 4.3, -0.9] as V3, sag: 0.4 },
   decor: [
     { from: [-9.6, 4.6, -6.2] as V3, to: [-3.4, 5.2, -7.6] as V3, sag: 0.3 },
     { from: [9.6, 3.8, 1.5] as V3, to: [9.6, 3.9, -5.5] as V3, sag: 0.3 },

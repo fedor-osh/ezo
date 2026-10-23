@@ -3,9 +3,9 @@
   "version": "0.1.0",
   "description": "Ezo — a multiplayer Tbilisi courtyard portfolio. Three.js + Rapier + Nanostores + a tiny Node presence server.",
   "scripts": {
-    "dev": "concurrently -k -n web,srv -c magenta,cyan \"vite\" \"tsx watch server/index.ts\"",
+    "dev": "concurrently -k -n web,srv -c magenta,cyan \"vite --port 5173 --strictPort\" \"PORT=8787 tsx watch server/index.ts\"",
     "dev:web": "vite",
-    "dev:server": "tsx watch server/index.ts",
+    "dev:server": "PORT=8787 tsx watch server/index.ts",
     "build": "tsc --noEmit && vite build",
     "start": "NODE_ENV=production tsx server/index.ts",
     "preview": "npm run build && npm start",

@@ -162,7 +162,7 @@ export class Creature {
     }
 
     // Grow with distance from the camera so the cursor stays legible in wide shots.
-    const want = this.sleep ? TRACE_SCALE : clamp(c.camPos.distanceTo(this.pos) / 4, 1, 3);
+    const want = this.sleep ? TRACE_SCALE : clamp(c.camPos.distanceTo(this.pos) / 3, 1, 4.5);
     this.scale += (want - this.scale) * damp(3, dt);
     const k = this.scale;
 

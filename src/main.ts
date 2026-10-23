@@ -3,7 +3,6 @@ import { createEngine } from "./core/engine.ts";
 import { installInput } from "./core/input.ts";
 import { buildWorld } from "./world/index.ts";
 import { initCloth } from "./cloth/index.ts";
-import { initLife } from "./life/index.ts";
 import { initCreatures } from "./life/creatures/index.ts";
 import { connect } from "./net/client.ts";
 import { initUI } from "./ui/index.ts";
@@ -26,6 +25,8 @@ async function main() {
   const world = buildWorld(engine);
   initCloth(engine);
   initCreatures(engine, world);
+  // Rapier ships its WASM inlined (~2 MB): load leaves and cats after the yard is already on screen.
+  const { initLife } = await import("./life/index.ts");
   await initLife(engine, world);
 }
 

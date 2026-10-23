@@ -330,10 +330,14 @@
 
   /* ---- Brand ---- */
   .brand {
-    padding: 0.25rem 0.5rem;
+    justify-self: start;
+    padding: 0.45rem 0.85rem;
     color: #2d221c;
-    /* Sits straight on the warm sky: a soft cream glow keeps it readable over any part of the scene. */
-    text-shadow: 0 0 0.5rem #fff8ec, 0 0 0.15rem #fff8ec;
+    /* A small glass chip: the camera moves, so the text can land on anything in the scene. */
+    background: var(--glass);
+    border-radius: 1rem;
+    box-shadow: var(--shadow-card);
+    backdrop-filter: blur(8px);
   }
   .brand__name {
     font-weight: 800;

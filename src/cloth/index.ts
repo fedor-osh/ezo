@@ -25,11 +25,11 @@ interface Look {
 }
 
 const NAV_LOOKS: Record<SectionId, Look> = {
-  home: { kind: "towel", w: 0.92, h: 1.12, cols: 14, rows: 16, icon: "heart" },
-  work: { kind: "pillow", w: 1.18, h: 0.84, cols: 16, rows: 12, icon: "star" },
-  about: { kind: "shirt", w: 1.14, h: 1.02, cols: 15, rows: 15, icon: "flower" },
-  stack: { kind: "towel", w: 0.96, h: 1.06, cols: 14, rows: 16, icon: "stack" },
-  contact: { kind: "pillow", w: 1.16, h: 0.8, cols: 16, rows: 12, icon: "envelope" },
+  home: { kind: "towel", w: 1.24, h: 1.51, cols: 14, rows: 16, icon: "heart" },
+  work: { kind: "pillow", w: 1.59, h: 1.13, cols: 16, rows: 12, icon: "star" },
+  about: { kind: "shirt", w: 1.54, h: 1.38, cols: 15, rows: 15, icon: "flower" },
+  stack: { kind: "towel", w: 1.30, h: 1.43, cols: 14, rows: 16, icon: "stack" },
+  contact: { kind: "pillow", w: 1.57, h: 1.08, cols: 16, rows: 12, icon: "envelope" },
 };
 
 interface Decor {
